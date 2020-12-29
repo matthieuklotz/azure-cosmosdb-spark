@@ -47,7 +47,6 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.util.Random
-import scala.collection.JavaConversions._
 
 /**
   * The CosmosDBSpark allow fast creation of RDDs, DataFrames or Datasets from CosmosDBSpark.
@@ -269,10 +268,10 @@ object CosmosDBSpark extends CosmosDBLoggingTrait {
     {
       logDebug(s"PartitionKeyDefinition: Version: ${version.toString}")
     }
-    logDebug(s"PartitionKeyDefinition: Paths - ${pkDefinitionModel.getPaths.mkString("|")}")
+    logDebug(s"PartitionKeyDefinition: Paths - ${pkDefinitionModel.getPaths.asScala.mkString("|")}")
 
     val sb = new StringBuilder()
-    docs.foreach(d =>
+    docs.asScala.foreach(d =>
       {
         val doc : String = d.toString
         val internalPK = com.microsoft.azure.documentdb.bulkexecutor.internal.DocumentAnalyzer
@@ -422,8 +421,9 @@ object CosmosDBSpark extends CosmosDBLoggingTrait {
     val failedUpdate = response.getFailedUpdates.get(0)
     val failure = failedUpdate.getBulkUpdateFailureException
 
-    val failedUpdateIds = failedUpdate.getFailedUpdateItems.map(_.getId)
-    val failedUpdatePKValues = failedUpdate.getFailedUpdateItems.map(_.getPartitionKeyValue)
+    val failedUpdateItems = failedUpdate.getFailedUpdateItems.asScala
+    val failedUpdateIds = failedUpdateItems.map(_.getId)
+    val failedUpdatePKValues = failedUpdateItems.map(_.getPartitionKeyValue)
     val failedUpdateIdPKValuesList = failedUpdateIds.zip(failedUpdatePKValues).toList.mkString(", ")
 
     val failureWithCallstack = getExceptionWithCallstack(failure)

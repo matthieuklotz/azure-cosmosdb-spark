@@ -34,7 +34,7 @@ import com.microsoft.azure.cosmosdb.rx.AsyncDocumentClient
 import com.microsoft.azure.cosmosdb.spark.schema.{CosmosDBRowConverter, SerializationConfig}
 import org.apache.spark.sql.Row
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -93,7 +93,7 @@ object AsyncCosmosDBConnection {
 
     val preferredRegionList = config.get[String](CosmosDBConfig.PreferredRegionsList)
     if (preferredRegionList.isDefined) {
-      val preferredLocations = preferredRegionList.get.split(";").toSeq.map(_.trim)
+      val preferredLocations = preferredRegionList.get.split(";").toSeq.map(_.trim).asJava
       connectionPolicy.setPreferredLocations(preferredLocations)
     }
 

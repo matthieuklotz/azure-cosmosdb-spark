@@ -30,7 +30,7 @@ import com.microsoft.azure.documentdb._
 import com.microsoft.azure.documentdb.bulkexecutor.DocumentBulkExecutor
 import com.microsoft.azure.documentdb.internal.routing.PartitionKeyRangeCache
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
@@ -145,8 +145,8 @@ object CosmosDBConnectionCache extends CosmosDBLoggingTrait {
       case Some(pk) =>
         val pkDefinition = new PartitionKeyDefinition()
         val paths: ListBuffer[String] = new ListBuffer[String]()
-        paths.add(pk)
-        pkDefinition.setPaths(paths)
+        paths.append(pk)
+        pkDefinition.setPaths(paths.asJavaCollection)
         pkDefinition
     }
   }
@@ -457,7 +457,7 @@ object CosmosDBConnectionCache extends CosmosDBLoggingTrait {
         s"CosmosDBConnection::Input preferred region list: ${preferredRegionsList.get}"
       )
       val preferredLocations =
-        preferredRegionsList.get.split(";").map(_.trim).toList
+        preferredRegionsList.get.split(";").map(_.trim).toList.asJava
       connectionPolicy.setPreferredLocations(preferredLocations)
     }
 
@@ -480,7 +480,7 @@ object CosmosDBConnectionCache extends CosmosDBLoggingTrait {
 
     val client = new DocumentClient(
       config.host,
-      namedResourceLinkPermission,
+      namedResourceLinkPermission.asJava,
       lastConnectionPolicy,
       consistencyLevel
     )
@@ -506,7 +506,7 @@ object CosmosDBConnectionCache extends CosmosDBLoggingTrait {
 
     new DocumentClient(
       config.host,
-      permissions,
+      permissions.asJava,
       lastConnectionPolicy,
       consistencyLevel
     )

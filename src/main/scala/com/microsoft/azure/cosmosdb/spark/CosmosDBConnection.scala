@@ -26,7 +26,7 @@ import com.microsoft.azure.cosmosdb.spark.config._
 import com.microsoft.azure.documentdb._
 import com.microsoft.azure.documentdb.bulkexecutor.DocumentBulkExecutor
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -93,6 +93,7 @@ private[spark] case class CosmosDBConnection(config: Config) extends CosmosDBLog
     
     response
         .getQueryIterator
+        .asScala
         .toList
   }
 
@@ -114,12 +115,14 @@ private[spark] case class CosmosDBConnection(config: Config) extends CosmosDBLog
       logDebug(s"CosmosDBConnection.getIteratorFromFeedResponse -- No continuation - returning simple list")
       val responseList:List[T]  = response
         .getQueryIterator
+        .asScala
         .toList
       responseList.iterator
     } else {
       logDebug(s"CosmosDBConnection.getIteratorFromFeedResponse -- With continuation - returning query iterator")
       val responseIterator:Iterator[T]  = response
         .getQueryIterator
+        .asScala
       responseIterator      
     }
   }
@@ -210,7 +213,7 @@ private[spark] case class CosmosDBConnection(config: Config) extends CosmosDBLog
         while (feedResponse.getQueryIterator.hasNext) {
           logDebug(s"    readChangeFeed.InWhile ContinuationToken: $blockStartContinuation")
           // fetchNextBlock can result in reading the next page of the changefeed and changing the continuation token header
-          val feedItems = feedResponse.getQueryIterable.fetchNextBlock()
+          val feedItems = feedResponse.getQueryIterable.fetchNextBlock().asScala
 
           for (feedItem <- feedItems) {
             if (!foundBookmark) {
@@ -220,7 +223,7 @@ private[spark] case class CosmosDBConnection(config: Config) extends CosmosDBLog
               if (lsn > currentContinuation.toInt) {
 
                 if (shouldInferStreamSchema) {
-                  cfDocumentsIfLastProcessedDocumentWasUpdatedAgain.add(feedItem)
+                  cfDocumentsIfLastProcessedDocumentWasUpdatedAgain.append(feedItem)
                 }
                 else {
                   val streamDocument: Document = new Document()
@@ -232,7 +235,7 @@ private[spark] case class CosmosDBConnection(config: Config) extends CosmosDBLog
                   streamDocument.set("_attachments", feedItem.get("_attachments"))
                   streamDocument.set("_ts", feedItem.get("_ts"))
 
-                  cfDocumentsIfLastProcessedDocumentWasUpdatedAgain.add(streamDocument)
+                  cfDocumentsIfLastProcessedDocumentWasUpdatedAgain.append(streamDocument)
                 }
               } 
 
@@ -249,7 +252,7 @@ private[spark] case class CosmosDBConnection(config: Config) extends CosmosDBLog
                   // this might result in a couple of duplicates
                   // but since changefeed's contract is only at-least-once not exactly-once
                   // this is accpetable and better than returning duplicates
-                  cfDocuments.addAll(cfDocumentsIfLastProcessedDocumentWasUpdatedAgain)
+                  cfDocuments.appendAll(cfDocumentsIfLastProcessedDocumentWasUpdatedAgain)
                 }
 
                 foundBookmark = true
@@ -258,7 +261,7 @@ private[spark] case class CosmosDBConnection(config: Config) extends CosmosDBLog
             }
             else {
               if (shouldInferStreamSchema) {
-                cfDocuments.add(feedItem)
+                cfDocuments.append(feedItem)
               }
               else {
                 val streamDocument: Document = new Document()
@@ -270,13 +273,13 @@ private[spark] case class CosmosDBConnection(config: Config) extends CosmosDBLog
                 streamDocument.set("_attachments", feedItem.get("_attachments"))
                 streamDocument.set("_ts", feedItem.get("_ts"))
 
-                cfDocuments.add(streamDocument)
+                cfDocuments.append(streamDocument)
               }
             }
           }
 
           if (!cfDocumentsIfLastProcessedDocumentWasUpdatedAgain.isEmpty) {
-            cfDocuments.addAll(cfDocumentsIfLastProcessedDocumentWasUpdatedAgain)
+            cfDocuments.appendAll(cfDocumentsIfLastProcessedDocumentWasUpdatedAgain)
             cfDocumentsIfLastProcessedDocumentWasUpdatedAgain.clear()
           }
 
@@ -325,7 +328,7 @@ private[spark] case class CosmosDBConnection(config: Config) extends CosmosDBLog
 
       updateTokenFunc(originalContinuation, nextContinuation, partitionId)
       logDebug(s"changeFeedOptions.partitionKeyRangeId = $partitionId, continuation = $originalContinuation, new token = $nextContinuation")
-      cfDocuments.iterator()
+      cfDocuments.iterator
     } else {
       // next Continuation Token is plain and simple when not using Streaming because
       // all records will be processed. The parameter 'maxPagesPerBatch' is irrelevant
@@ -337,7 +340,7 @@ private[spark] case class CosmosDBConnection(config: Config) extends CosmosDBLog
         updateTokenFunc,
         (msg: String) => logDebug(msg),
         partitionId
-      )
+      ).asScala
     }
   }
 

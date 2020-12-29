@@ -25,6 +25,8 @@ package com.microsoft.azure.cosmosdb.spark.query
 import com.microsoft.azure.cosmosdb.spark.config.Config
 import org.apache.spark.sql.sources._
 
+import scala.language.implicitConversions
+
 object FilterSection {
 
   implicit def srcFilArr2filSel(sFilters: Array[Filter])(implicit config: Config): FilterSection =

@@ -29,6 +29,7 @@ import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
+import scala.language.implicitConversions
 
 /**
   * Whole CosmosDB helpers.
